@@ -4,6 +4,7 @@ const Web3 = require('web3');
 const net  = require('net');
 const os   = require('os');
 const path = require('path');
+const keth = require('keythereum');
 
 // For web3.eth, "CUE" simply pointing to existing web3 functions.
 // the reason to place them under "CUE" is to unify the job queue
@@ -19,9 +20,35 @@ const web3EthSanity  = require( __dirname + '/conditions/Web3/Sanity.js' );
 const allConditions  = { ...web3EthSanity, ...web3EthFulfill };
 const fs = require('fs');
 
+// Internal functions
+const recover = (address, password, datadir) =>
+        {
+                let keyObj;
+
+                try {
+                        keyObj = keth.importFromFile(address, datadir);
+                } catch (err) {
+			console.dir(err);
+                        return Promise.resolve({rc: false, pkey: {}});
+                }
+
+                const __recovers = (resolve, reject) =>
+                {
+                        console.log("Processing " + address);
+                        keth.recover(password, keyObj, function(pkey) {
+                                if (pkey.toString() === 'Error: message authentication code mismatch') {
+                                        resolve({rc: false, pkey: {}})
+                                } else {
+                                        resolve({rc: true, pkey});
+                                }
+                        });
+                }
+
+                return new Promise(__recovers);
+        }
+
 // Main Class
 class Wrap3 {
-
 	constructor(cfpath)
 	{
 		const __watcher = (cfpath) => {
@@ -149,6 +176,11 @@ class Wrap3 {
 
                 return new Promise(__unlockToExec);
         }
+
+	unlockAndSign = (passwd) => (addr, message) => 
+	{
+		return recover(addr, passwd, this.configs.datadir);
+	}
 
 	configured = () => {
 		if (this.networkID === 'NO_CONFIG') {
