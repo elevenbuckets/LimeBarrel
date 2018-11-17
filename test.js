@@ -7,17 +7,17 @@ const ethUtils = require('ethereumjs-utils');
 
 // testing PoC here
 let passwd = 'dc384ZU@b9lab';
-let params = 
-{
-  nonce: '0x00',
-  gasPrice: '0x09184e72a000', 
-  gasLimit: '0xa710',
-  to: '0x0000000000000000000000000000000000000000', 
-  value: '0x00', 
-  data: '0x7f7465737432000000000000000000000000000000000000000000000000000000600057',
-  // EIP 155 chainId - mainnet: 1, ropsten: 3
-  chainId: 4
-} 
+
+// mocked message format to be signed
+const fields = 
+[
+   {name: 'nonce', length: 32, allowLess: true, default: new Buffer([]) },
+   {name: 'validatorAddress', length: 20, allowZero: true, default: new Buffer([]) },
+   {name: 'originAddress', length: 20, allowZero: true, default: new Buffer([]) },
+   {name: 'timestamp', length: 32, allowLess: true, default: new Buffer([]) },
+   {name: 'type', length: 32, allowLess: true, default: new Buffer([]) },
+   {name: 'payload', length: 32, allowLess: true, default: new Buffer([]) }
+]
 
 lbapi.connect()
   .then((rc) => 
@@ -26,17 +26,36 @@ lbapi.connect()
 	let address = lbapi.allAccounts()[0]
 	return lbapi.unlockAndSign(passwd)(address, 'Hello World');
 })
-  .then((data) =>
+  .then((p) =>
 {
-	if(!data.rc) throw "failed to unlock account";
-	let tx = new EthTx(params);	
-	tx.sign(data.pkey);
-	return tx;
+	if(!p.rc) throw "failed to unlock account";
+	//let tx = new EthTx(params);	
+	//tx.sign(data.pkey);
+	//return tx;
+
+	let params = 
+	{
+		nonce: 0,
+		originAddress: '0xb440ea2780614b3c6a00e512f432785e7dfafa3e',
+		validatorAddress: '0x5e05bf686664b3e5e5d6de88dbba5c5bb1930b8f',
+		timestamp: 1542498233, // making signature repeatable for debugging;
+		type: '0x11be0000001',
+		payload: 'Hello World!'	
+	}
+
+	let mesh11 = {};
+	ethUtils.defineProperties(mesh11, fields, params)
+
+	let data = mesh11.serialize();
+	let datahash = ethUtils.hashPersonalMessage(data);
+	return {...mesh11, ...ethUtils.ecsign(datahash, p.pkey, 3)};
+	
 })
-  .then((tx) => 
+  .then((sig) => 
 {
-	console.log(tx.validate());
-	console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(tx.getSenderPublicKey()))));
+	console.log(sig);
+	//console.dir(ethUtils.baToJSON(tx.raw));
+	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(tx.getSenderPublicKey()))));
 }) 
   .then(() => 
 {
