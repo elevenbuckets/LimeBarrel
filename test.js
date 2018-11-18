@@ -16,16 +16,20 @@ const fields =
    {name: 'originAddress', length: 20, allowZero: true, default: new Buffer([]) },
    {name: 'timestamp', length: 32, allowLess: true, default: new Buffer([]) },
    {name: 'type', length: 32, allowLess: true, default: new Buffer([]) },
-   {name: 'payload', length: 32, allowLess: true, default: new Buffer([]) }
+   {name: 'payload', length: 32, allowLess: true, default: new Buffer([]) },
+   {name: 'v', allowZero: true, default: new Buffer([0x1c]) },
+   {name: 'r', allowZero: true, length: 32, default: new Buffer([]) },
+   {name: 's', allowZero: true, length: 32, default: new Buffer([]) }
 ]
 
 const pubKeyToAddress = (sigObj) => 
 {
+	let origin = ethUtils.baToJSON(sigObj);
 	let signer = '0x' + 
 	      ethUtils.bufferToHex(
 		ethUtils.sha3(
 		  ethUtils.bufferToHex(
-			ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)
+			ethUtils.ecrecover(datahash, sigObj.v, sigObj.r, sigObj.s, 4)
 		  )
                 )
               ).slice(26);
@@ -59,19 +63,40 @@ lbapi.connect()
 		payload: 'Hello World!'	
 	}
 
+	let __tmp  = {}; 
 	let mesh11 = {};
-	ethUtils.defineProperties(mesh11, fields, params)
+	ethUtils.defineProperties(__tmp, fields, params)
 
-	let data = mesh11.serialize();
-	let datahash = ethUtils.hashPersonalMessage(data);
-	return {datahash, ...mesh11, signature: ethUtils.ecsign(datahash, p.pkey, 4)};
+	let data = __tmp.serialize();
+	let datahash = ethUtils.hashPersonalMessage(data); console.log(ethUtils.bufferToHex(datahash))
+	let signature = ethUtils.ecsign(datahash, p.pkey, 4);
+
+	ethUtils.defineProperties(mesh11, fields, {...params, ...signature});
+	return mesh11.serialize(); 
 	
 })
-  .then((sigObj) => 
+  .then((s) => 
 {
-	console.log(sigObj);
+	let m = {};
+	ethUtils.defineProperties(m, fields, s);
+	let signature = {v: m.v, r: m.r, s: m.s};
+	let params = 
+	{
+		nonce: m.nonce,
+		originAddress: m.originAddress,
+		validatorAddress: m.validatorAddress,
+		timestamp: m.timestamp,
+		type: m.type,
+		payload: m.payload
+	}	
+
+	let ra = {};
+	let replica = ethUtils.defineProperties(ra, fields, params);
+	let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); console.log(ethUtils.bufferToHex(chkhash));
+
+	//console.log(pubKeyToAddress(sigObj));
+	
 	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)))));
-	console.log(pubKeyToAddress(sigObj));
 	//console.dir(ethUtils.baToJSON(tx.raw));
 	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(tx.getSenderPublicKey()))));
 }) 
