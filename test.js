@@ -48,9 +48,6 @@ lbapi.connect()
   .then((p) =>
 {
 	if(!p.rc) throw "failed to unlock account";
-	//let tx = new EthTx(params);	
-	//tx.sign(data.pkey);
-	//return tx;
 
 	let params = 
 	{
@@ -67,14 +64,14 @@ lbapi.connect()
 	ethUtils.defineProperties(__tmp, fields, params)
 
 	let data = __tmp.serialize();
-	let datahash = ethUtils.hashPersonalMessage(data); //console.log(ethUtils.bufferToHex(datahash))
-	let signature = ethUtils.ecsign(datahash, p.pkey, 4); //console.dir(signature);
+	let datahash = ethUtils.hashPersonalMessage(data); 
+	let signature = ethUtils.ecsign(datahash, p.pkey, 4); 
 
 	ethUtils.defineProperties(mesh11, fields, {...params, ...signature});
-	return mesh11.serialize(); 
+	return mesh11.serialize(); // serialized data, ready to be relayed via p2p network
 	
 })
-  .then((s) => 
+  .then((s) => //pretending the variable s is received by validator via p2p network 
 {
 	let m = {};
 	ethUtils.defineProperties(m, fields, s);
@@ -91,14 +88,9 @@ lbapi.connect()
 
 	let ra = {};
 	ethUtils.defineProperties(ra, fields, params);
-	let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); //console.log(ethUtils.bufferToHex(chkhash));
-	//console.dir(signature);
+	let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); 
 
 	console.log(pubKeyToAddress({chkhash, ...signature, originAddress: ethUtils.bufferToHex(m.originAddress)}));
-	
-	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)))));
-	//console.dir(ethUtils.baToJSON(tx.raw));
-	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(tx.getSenderPublicKey()))));
 }) 
   .then(() => 
 {
