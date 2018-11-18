@@ -24,12 +24,11 @@ const fields =
 
 const pubKeyToAddress = (sigObj) => 
 {
-	let origin = ethUtils.baToJSON(sigObj);
 	let signer = '0x' + 
 	      ethUtils.bufferToHex(
 		ethUtils.sha3(
 		  ethUtils.bufferToHex(
-			ethUtils.ecrecover(datahash, sigObj.v, sigObj.r, sigObj.s, 4)
+			ethUtils.ecrecover(sigObj.chkhash, sigObj.v, sigObj.r, sigObj.s, 4)
 		  )
                 )
               ).slice(26);
@@ -68,8 +67,8 @@ lbapi.connect()
 	ethUtils.defineProperties(__tmp, fields, params)
 
 	let data = __tmp.serialize();
-	let datahash = ethUtils.hashPersonalMessage(data); console.log(ethUtils.bufferToHex(datahash))
-	let signature = ethUtils.ecsign(datahash, p.pkey, 4);
+	let datahash = ethUtils.hashPersonalMessage(data); //console.log(ethUtils.bufferToHex(datahash))
+	let signature = ethUtils.ecsign(datahash, p.pkey, 4); //console.dir(signature);
 
 	ethUtils.defineProperties(mesh11, fields, {...params, ...signature});
 	return mesh11.serialize(); 
@@ -79,7 +78,7 @@ lbapi.connect()
 {
 	let m = {};
 	ethUtils.defineProperties(m, fields, s);
-	let signature = {v: m.v, r: m.r, s: m.s};
+	let signature = {v: ethUtils.bufferToInt(m.v), r: m.r, s: m.s};
 	let params = 
 	{
 		nonce: m.nonce,
@@ -91,10 +90,11 @@ lbapi.connect()
 	}	
 
 	let ra = {};
-	let replica = ethUtils.defineProperties(ra, fields, params);
-	let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); console.log(ethUtils.bufferToHex(chkhash));
+	ethUtils.defineProperties(ra, fields, params);
+	let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); //console.log(ethUtils.bufferToHex(chkhash));
+	//console.dir(signature);
 
-	//console.log(pubKeyToAddress(sigObj));
+	console.log(pubKeyToAddress({chkhash, ...signature, originAddress: ethUtils.bufferToHex(m.originAddress)}));
 	
 	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)))));
 	//console.dir(ethUtils.baToJSON(tx.raw));
