@@ -21,7 +21,18 @@ const fields =
 
 const pubKeyToAddress = (sigObj) => 
 {
-	return '0x' + ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)))).slice(26);
+	let signer = '0x' + 
+	      ethUtils.bufferToHex(
+		ethUtils.sha3(
+		  ethUtils.bufferToHex(
+			ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)
+		  )
+                )
+              ).slice(26);
+
+	console.log(`signer address: ${signer}`);
+
+	return signer === ethUtils.bufferToHex(sigObj.originAddress); 
 }
 
 lbapi.connect()
