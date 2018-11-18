@@ -19,6 +19,11 @@ const fields =
    {name: 'payload', length: 32, allowLess: true, default: new Buffer([]) }
 ]
 
+const pubKeyToAddress = (sigObj) => 
+{
+	return '0x' + ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)))).slice(26);
+}
+
 lbapi.connect()
   .then((rc) => 
 {
@@ -48,12 +53,14 @@ lbapi.connect()
 
 	let data = mesh11.serialize();
 	let datahash = ethUtils.hashPersonalMessage(data);
-	return {...mesh11, ...ethUtils.ecsign(datahash, p.pkey, 3)};
+	return {datahash, ...mesh11, signature: ethUtils.ecsign(datahash, p.pkey, 4)};
 	
 })
-  .then((sig) => 
+  .then((sigObj) => 
 {
-	console.log(sig);
+	console.log(sigObj);
+	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(ethUtils.ecrecover(sigObj.datahash, sigObj.signature.v, sigObj.signature.r, sigObj.signature.s, 4)))));
+	console.log(pubKeyToAddress(sigObj));
 	//console.dir(ethUtils.baToJSON(tx.raw));
 	//console.log(ethUtils.bufferToHex(ethUtils.sha3(ethUtils.bufferToHex(tx.getSenderPublicKey()))));
 }) 
