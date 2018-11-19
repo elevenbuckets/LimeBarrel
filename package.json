@@ -38,6 +38,7 @@
     "ethereumjs-utils": "^5.2.5",
     "keythereum": "git+ssh://git@github.com/elevenbuckets/keythereum.git",
     "uuid": "^3.3.2",
-    "web3": "^0.20.6"
+    "web3": "^0.20.6",
+    "web3-eth-abi": "^1.0.0-beta.36"
   }
 }
