@@ -63,10 +63,33 @@ lbapi.connect()
 	let mesh11 = {};
 	ethUtils.defineProperties(__tmp, fields, params)
 
-	let data = __tmp.serialize();
-	let datahash = ethUtils.hashPersonalMessage(data); 
-	let signature = ethUtils.ecsign(datahash, p.pkey, 4); 
+/* First trial: generate and sign the whole rlphash
+ *	let data = __tmp.serialize();
+ *	let datahash = ethUtils.hashPersonalMessage(data); 
+ *	let signature = ethUtils.ecsign(datahash, p.pkey, 4); 
+ */	
 
+// Second trail: compile the data and the sha3 signature of packed data
+	let data = lbapi.abi.encodeParameters(
+		[
+		 'uint', 
+		 'address', 
+		 'address', 
+		 'uint', 
+		 'bytes32', 
+		 'string'
+		], 
+		[
+		 params.nonce,
+		 params.originAddress,
+		 params.validatorAddress,
+		 params.timestamp,
+		 params.type,
+		 params.payload
+		]
+	);
+ 	let datahash = ethUtils.hashPersonalMessage(new Buffer(data)); 
+ 	let signature = ethUtils.ecsign(datahash, p.pkey, 4); 
 	ethUtils.defineProperties(mesh11, fields, {...params, ...signature});
 	return mesh11.serialize(); // serialized data, ready to be relayed via p2p network
 	
@@ -76,19 +99,29 @@ lbapi.connect()
 	let m = {};
 	ethUtils.defineProperties(m, fields, s);
 	let signature = {v: ethUtils.bufferToInt(m.v), r: m.r, s: m.s};
-	let params = 
-	{
-		nonce: m.nonce,
-		originAddress: m.originAddress,
-		validatorAddress: m.validatorAddress,
-		timestamp: m.timestamp,
-		type: m.type,
-		payload: m.payload
-	}	
 
-	let ra = {};
-	ethUtils.defineProperties(ra, fields, params);
-	let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); 
+	//let ra = {};
+	//ethUtils.defineProperties(ra, fields, params);
+	//let chkhash = ethUtils.hashPersonalMessage(ra.serialize()); 
+	let data = lbapi.abi.encodeParameters(
+		[
+		 'uint', 
+		 'address', 
+		 'address', 
+		 'uint', 
+		 'bytes32', 
+		 'string'
+		], 
+		[
+		 ethUtils.bufferToInt(m.nonce),
+		 ethUtils.bufferToHex(m.originAddress),
+		 ethUtils.bufferToHex(m.validatorAddress),
+		 ethUtils.bufferToInt(m.timestamp),
+		 m.type,
+		 m.payload.toString()
+		]
+	);
+ 	let chkhash = ethUtils.hashPersonalMessage(new Buffer(data)); 
 
 	console.log(pubKeyToAddress({chkhash, ...signature, originAddress: ethUtils.bufferToHex(m.originAddress)}));
 }) 

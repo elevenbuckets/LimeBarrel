@@ -5,6 +5,7 @@ const net  = require('net');
 const os   = require('os');
 const path = require('path');
 const keth = require('keythereum');
+const abi  = require('web3-eth-abi');
 
 // For web3.eth, "CUE" simply pointing to existing web3 functions.
 // the reason to place them under "CUE" is to unify the job queue
@@ -109,6 +110,8 @@ class Wrap3 {
         		return addr;
 		};
 
+		this.abi = abi;
+
     		this.ipc3 = new Web3();
     		//this.ipc3.setProvider(new Web3.providers.IpcProvider(this.ipcPath, net));
 
@@ -177,7 +180,7 @@ class Wrap3 {
                 return new Promise(__unlockToExec);
         }
 
-	unlockAndSign = (passwd) => (addr, message) => 
+	unlockAndSign = (passwd) => (addr, message=null) => 
 	{
 		return recover(addr, passwd, this.configs.datadir);
 	}
