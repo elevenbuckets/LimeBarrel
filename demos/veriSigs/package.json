@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "LimeBarrel": "git+ssh://git@github.com/elevenbuckets/LimeBarrel.git",
-    "merkle-tree-solidity": "^1.0.8"
+    "merkle-tools": "^1.4.0",
+    "xrange": "^1.0.1"
   }
 }
